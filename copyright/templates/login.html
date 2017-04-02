@@ -1,5 +1,47 @@
+<!-- Reference: https://code.tutsplus.com/tutorials/intro-to-flask-signing-in-and-out--net-29982 -->
+
 {% extends "base.html" %}
 
+{% block css %}
+<link rel="stylesheet" type="text/css" href="/static/css/login.css">
+{% endblock %}
+
 {% block content %}
-Site coming soon...
+  <div id="login_form">
+    <h2>Login</h2>
+     
+    <form action="{{ url_for('homeRoutes.login') }}" class="form-horizontal" method="POST">
+      {{ login_form.hidden_tag() }}
+
+      <div class="form-group {% if login_form.email.errors %} has-error {% endif %}">
+        {{ login_form.email.label(class="col-sm-2 control-label") }}
+        <div class="col-sm-3">
+          {{ login_form.email(placeholder="e.g. me@example.com", class="form-control") }}
+        </div>
+        {% if login_form.email.errors %}
+          <p class="col-sm-5 help-block">
+            {{ login_form.email.errors[0] }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group {% if login_form.password.errors %} has-error {% endif %}">
+        {{ login_form.password.label(class="col-sm-2 control-label") }}
+        <div class="col-sm-3">
+          {{ login_form.password(placeholder="Min. 8 Characters", class="form-control") }}
+        </div>
+        {% if login_form.password.errors %}
+          <p class="col-sm-5 help-block">
+            {{ login_form.password.errors[0] }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          {{ login_form.submit(class="btn btn-default") }}
+        </div>
+      </div>
+    </form>
+  </div>
 {% endblock %}

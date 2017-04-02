@@ -1,7 +1,7 @@
-from flask import Blueprint, request, render_template, jsonify, redirect, url_for
+from flask import Blueprint, request, render_template, jsonify, redirect, url_for, session
 
-from copyright import db
 from copyright.models import *
+from copyright.home.forms import LoginForm, SignupForm
 
 from sqlalchemy import desc
 from math import ceil
@@ -34,9 +34,63 @@ def index():
     return render_template('index.html')
 
 
-@homeRoutes.route('/login')
+@homeRoutes.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    if 'email' in session:
+        return redirect(url_for('homeRoutes.profile'))
+
+    login_form = LoginForm()
+
+    if request.method == 'GET':
+        return render_template('login.html', login_form=login_form)
+
+    elif request.method == 'POST':
+        if not login_form.validate():
+            return render_template('login.html', login_form=login_form)
+        else:
+            session['email'] = login_form.email.data
+            return redirect(url_for('homeRoutes.profile'))
+
+
+@homeRoutes.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if 'email' in session:
+        return redirect(url_for('homeRoutes.profile'))
+
+    signup_form = SignupForm()
+
+    if request.method == 'GET':
+        return render_template('signup.html', signup_form=signup_form)
+
+    elif request.method == 'POST':
+        if not signup_form.validate():
+            return render_template('signup.html', signup_form=signup_form)
+        else:
+            newuser = User(signup_form.firstname.data, signup_form.lastname.data, signup_form.email.data, signup_form.password.data)
+            db.session.add(newuser)
+            db.session.commit()
+            session['email'] = newuser.email
+            return redirect(url_for('homeRoutes.profile'))
+
+
+@homeRoutes.route('/logout')
+def signout():
+    if 'email' not in session:
+        return redirect(url_for('homeRoutes.login'))
+
+    session.pop('email', None)
+    return redirect(url_for('homeRoutes.index'))
+
+@homeRoutes.route('/profile')
+def profile():
+    if 'email' not in session:
+        return redirect(url_for('homeRoutes.login'))
+ 
+    user = User.query.filter_by(email = session['email']).first()
+    if user is None:
+        return redirect(url_for('homeRoutes.login'))
+    else:
+        return render_template('profile.html', user=user)
 
 
 @homeRoutes.route('/search')

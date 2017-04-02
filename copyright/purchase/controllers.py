@@ -1,6 +1,5 @@
-from flask import Blueprint, session, request, render_template
+from flask import Blueprint, request, render_template, jsonify, redirect, url_for, session
 
-from copyright import db
 from copyright.models import *
 
 import datetime, stripe, sys

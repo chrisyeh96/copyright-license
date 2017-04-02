@@ -1,4 +1,7 @@
-from copyright import db
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug import generate_password_hash, check_password_hash
+ 
+db = SQLAlchemy()
 
 image_categories = db.Table('image_categories',
    db.Column('image_id', db.Integer, db.ForeignKey('images.id'), nullable=False),
@@ -47,7 +50,6 @@ class Image(db.Model):
     #   to create a new license for an existing image? or what if we want to
     #   edit an existing license?
 
-
 class User(db.Model):
     """
     Information about each user, for both clients and photographers
@@ -58,6 +60,10 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date_created = db.Column(db.DateTime)
     active = db.Column(db.Boolean)
+    firstname = db.Column(db.String)
+    lastname = db.Column(db.String)
+    email = db.Column(db.String, unique=True) # TODO: maybe index=True ?
+    pwdhash = db.Column(db.String)
     
     # optional fields
     profilePic_filename = db.Column(db.String)
@@ -66,12 +72,16 @@ class User(db.Model):
     # relationships
     created_images = db.relationship('Image', back_populates='creator')
     created_licenses = db.relationship('License', back_populates='creator')
-    
-    # future fields
-    # name = db.Column(db.String)
-    # email = db.Column(db.String(120), index=True, unique=True)
-    # password = db.Column(db.String)
-    # name = db.Column(db.String)
+
+    def __init__(self, firstname, lastname, email, password):
+        self.firstname = firstname
+        self.lastname = lastname
+        self.email = email.lower()
+        self.pwdhash = generate_password_hash(password)
+        self.profilePic_filename = 'http://reels.syntheticpictures.com/img/directors/blank-avatar.png'
+
+    def check_password(self, password):
+        return check_password_hash(self.pwdhash, password)
 
     def __repr__(self):
         return '<User %r>' % (self.id)

@@ -1,6 +1,5 @@
-from flask import Blueprint, request, render_template, jsonify
+from flask import Blueprint, request, render_template, jsonify, redirect, url_for, session
 
-from copyright import db
 from copyright.models import *
 
 import requests, datetime, stripe, sys, json
@@ -27,6 +26,9 @@ def record_params(setup_state):
 
 @createRoutes.route('/create')
 def create():
+    if 'email' not in session:
+        return redirect(url_for('homeRoutes.login'))
+    
     return render_template('create.html', token=None,
         licensing_protocol=json.load(open('./copyright/static/survey/licensing-protocol.json', 'rb')))
 
