@@ -63,20 +63,26 @@ def signup():
         db.session.commit()
         session['email'] = newuser.email
 
-        fromaddr = "copyrightfeedback@gmail.com"
-        toaddr = newuser.email
-        msg = MIMEMultipart()
-        msg['From'] = fromaddr
-        msg['To'] = toaddr
-        msg['Subject'] = "Welcome to License Exchange"
-        body = "Hello, %s %s! Welcome to License Exchange." % (newuser.firstname, newuser.lastname)
-        msg.attach(MIMEText(body, 'plain'))
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(fromaddr, app.config['EMAIL_PASSWORD'])
-        text = msg.as_string()
-        server.sendmail(fromaddr, toaddr, text)
-        server.quit()
+        try:
+            fromaddr = "copyrightfeedback@gmail.com"
+            toaddr = newuser.email
+            msg = MIMEMultipart()
+            msg['From'] = fromaddr
+            msg['To'] = toaddr
+            msg['Subject'] = "Welcome to License Exchange"
+            body = "Hello, %s %s! Welcome to License Exchange." % (newuser.firstname, newuser.lastname)
+            msg.attach(MIMEText(body, 'plain'))
+            text = msg.as_string()
+
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.ehlo()
+            server.login(fromaddr, app.config['EMAIL_PASSWORD'])
+            server.sendmail(fromaddr, toaddr, text)
+            server.quit()
+        except:  
+            print 'Something went wrong with sending the signup confirmation email...'
+            print sys.exc_info()[0]
+            sys.stdout.flush()
 
         return redirect(url_for('homeRoutes.profile'))
     else:
@@ -204,6 +210,7 @@ def submit_feedback():
         except:  
             print 'Something went wrong with sending the feedback...'
             print sys.exc_info()[0]
+            sys.stdout.flush()
 
         return redirect(url_for('homeRoutes.about'))
     else:
