@@ -70,11 +70,11 @@ def register_license():
     sys.stdout.flush()
     categories = request.form.getlist('categories') # list of strings, ie. ['3', '4']
     edit_privilege = request.form['edit_privilege']
-    credit = bool(request.form['credit'])
+    credit = bool(int(request.form['credit']))
     if credit:
-        credit_type = request.form['credit_type']
         print "wants credit"
         sys.stdout.flush()
+        credit_type = request.form['credit_type']
         credit_receiver = request.form['credit_receiver']
     keywords = request.form['keywords']
     price_internal_1 = convertDollarsToCents(request.form['price11'])
