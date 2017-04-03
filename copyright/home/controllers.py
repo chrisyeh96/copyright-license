@@ -65,10 +65,9 @@ def signup():
 
         fromaddr = "copyrightfeedback@gmail.com"
         toaddr = newuser.email
-        COMMASPACE = ', '
         msg = MIMEMultipart()
         msg['From'] = fromaddr
-        msg['To'] = COMMASPACE.join(toaddr)
+        msg['To'] = toaddr
         msg['Subject'] = "Welcome to License Exchange"
         body = "Hello, %s %s! Welcome to License Exchange." % (newuser.firstname, newuser.lastname)
         msg.attach(MIMEText(body, 'plain'))
@@ -182,8 +181,10 @@ def submit_feedback():
         db.session.commit()
 
         msg = MIMEMultipart()
-        msg['From'] = "copyrightfeedback@gmail.com"
-        msg['To'] = "chrisyeh@stanford.edu, rbarcelo@stanford.edu"
+        fromaddr = "copyrightfeedback@gmail.com"
+        toaddr = "chrisyeh@stanford.edu"
+        msg['From'] = fromaddr
+        msg['To'] = toaddr
         msg['Subject'] = "Copyright License Website Feedback"
         body = "Name: %s\nEmail: %s\nMessage: %s" % (newFeedback.name, newFeedback.email, newFeedback.message)
         msg.attach(MIMEText(body, 'plain'))
@@ -194,8 +195,14 @@ def submit_feedback():
         server.sendmail(fromaddr, toaddr, text)
         server.quit()
 
+        print "Submitted Feedback!"
+        print body
+        sys.stdout.flush()
+
         return redirect(url_for('homeRoutes.about'))
     else:
+        print "Error in feedback"
+        sys.stdout.flush()
         return render_template('about.html', contact_form=contact_form)
 
 
