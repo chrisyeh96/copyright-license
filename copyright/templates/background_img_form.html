@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block css %}
+<!-- <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/background_img_form.css') }}"> -->
+<link rel="stylesheet" type="text/css" href="/static/css/background_img_form.css">
+{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+  {% block form %}{% endblock %}
+</div>
+
+<div id="attribution">
+  Photo by <a href="https://flic.kr/p/pfSAKL">Mr. Nixter</a>
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, jsonify, redirect, url_for, session
 
 from copyright.models import *
-from copyright.home.forms import LoginForm, SignupForm
+from copyright.home.forms import LoginForm, SignupForm, ContactForm, UpdateUserForm
 
 from sqlalchemy import desc
 from math import ceil
@@ -41,15 +41,12 @@ def login():
 
     login_form = LoginForm()
 
-    if request.method == 'GET':
+    # validate_on_submit() checks if it is POST request and if the form is valid
+    if login_form.validate_on_submit():
+        session['email'] = login_form.email.data
+        return redirect(url_for('homeRoutes.profile'))
+    else:
         return render_template('login.html', login_form=login_form)
-
-    elif request.method == 'POST':
-        if not login_form.validate():
-            return render_template('login.html', login_form=login_form)
-        else:
-            session['email'] = login_form.email.data
-            return redirect(url_for('homeRoutes.profile'))
 
 
 @homeRoutes.route('/signup', methods=['GET', 'POST'])
@@ -59,18 +56,32 @@ def signup():
 
     signup_form = SignupForm()
 
-    if request.method == 'GET':
-        return render_template('signup.html', signup_form=signup_form)
+    # validate_on_submit() checks if it is POST request and if the form is valid
+    if signup_form.validate_on_submit():
+        newuser = User(signup_form.firstname.data, signup_form.lastname.data, signup_form.email.data, signup_form.password.data)
+        db.session.add(newuser)
+        db.session.commit()
+        session['email'] = newuser.email
 
-    elif request.method == 'POST':
-        if not signup_form.validate():
-            return render_template('signup.html', signup_form=signup_form)
-        else:
-            newuser = User(signup_form.firstname.data, signup_form.lastname.data, signup_form.email.data, signup_form.password.data)
-            db.session.add(newuser)
-            db.session.commit()
-            session['email'] = newuser.email
-            return redirect(url_for('homeRoutes.profile'))
+        fromaddr = "copyrightfeedback@gmail.com"
+        toaddr = newuser.email
+        COMMASPACE = ', '
+        msg = MIMEMultipart()
+        msg['From'] = fromaddr
+        msg['To'] = COMMASPACE.join(toaddr)
+        msg['Subject'] = "Welcome to License Exchange"
+        body = "Hello, %s %s! Welcome to License Exchange." % (newuser.firstname, newuser.lastname)
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(fromaddr, app.config['EMAIL_PASSWORD'])
+        text = msg.as_string()
+        server.sendmail(fromaddr, toaddr, text)
+        server.quit()
+
+        return redirect(url_for('homeRoutes.profile'))
+    else:
+        return render_template('signup.html', signup_form=signup_form)
 
 
 @homeRoutes.route('/logout')
@@ -81,16 +92,45 @@ def signout():
     session.pop('email', None)
     return redirect(url_for('homeRoutes.index'))
 
+
 @homeRoutes.route('/profile')
 def profile():
     if 'email' not in session:
         return redirect(url_for('homeRoutes.login'))
+
+    update_user_form = UpdateUserForm()
  
     user = User.query.filter_by(email = session['email']).first()
     if user is None:
         return redirect(url_for('homeRoutes.login'))
     else:
-        return render_template('profile.html', user=user)
+        return render_template('profile.html', user=user, update_user_form=update_user_form, images=user.created_images)
+
+
+@homeRoutes.route('/update_user', methods=['POST'])
+def update_user():
+    if 'email' not in session:
+        return redirect(url_for('homeRoutes.login'))
+    user = User.query.filter_by(email = session['email']).first()
+    if user is None:
+        return redirect(url_for('homeRoutes.login'))
+
+    update_user_form = UpdateUserForm()
+    if update_user_form.validate_on_submit():
+        tempUser = User(update_user_form.firstname.data, update_user_form.lastname.data, update_user_form.email.data, update_user_form.password.data)
+        user.pwdhash = tempUser.pwdhash
+        user.plus_id = update_user_form.plus_id.data
+
+        tempStripeID = update_user_form.stripe_id.data.strip()
+        if tempStripeID != "":
+            user.stripe_id = tempStripeID
+            ## TODO: validate stripe ID
+
+        db.session.commit()
+
+        redirect(url_for('homeRoutes.profile'))
+    else:
+        return render_template('profile.html', user=user, update_user_form=update_user_form)
 
 
 @homeRoutes.route('/search')
@@ -127,34 +167,36 @@ def page():
 
 @homeRoutes.route('/about', methods=['GET'])
 def about():
-    feedback = Feedback.query.all()
-    return render_template('about.html', feedback=feedback)
+    contact_form = ContactForm()
+    return render_template('about.html', contact_form=contact_form)
 
 
 @homeRoutes.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
-    newFeedback = Feedback()
-    newFeedback.input = request.form['feedback']
-    db.session.add(newFeedback)
+    contact_form = ContactForm()
 
-    fromaddr = "copyrightfeedback@gmail.com"
-    toaddr = ['chrisyeh@stanford.edu', 'rbarcelo@stanford.edu']
-    COMMASPACE = ', '
-    msg = MIMEMultipart()
-    msg['From'] = fromaddr
-    msg['To'] = COMMASPACE.join(toaddr)
-    msg['Subject'] = "You've received new feedback."
-    body = "According to one user, \"" + request.form['feedback'] + "\""
-    msg.attach(MIMEText(body, 'plain'))
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
-    server.login(fromaddr, app.config['EMAIL_PASSWORD'])
-    text = msg.as_string()
-    server.sendmail(fromaddr, toaddr, text)
-    server.quit()
+    # validate_on_submit() checks if it is POST request and if the form is valid
+    if contact_form.validate_on_submit():
+        newFeedback = Feedback(contact_form.name.data, contact_form.email.data, contact_form.message.data)
+        db.session.add(newFeedback)
+        db.session.commit()
 
-    db.session.commit()
-    return redirect(url_for('homeRoutes.about'))
+        msg = MIMEMultipart()
+        msg['From'] = "copyrightfeedback@gmail.com"
+        msg['To'] = "chrisyeh@stanford.edu, rbarcelo@stanford.edu"
+        msg['Subject'] = "Copyright License Website Feedback"
+        body = "Name: %s\nEmail: %s\nMessage: %s" % (newFeedback.name, newFeedback.email, newFeedback.message)
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(fromaddr, app.config['EMAIL_PASSWORD'])
+        text = msg.as_string()
+        server.sendmail(fromaddr, toaddr, text)
+        server.quit()
+
+        return redirect(url_for('homeRoutes.about'))
+    else:
+        return render_template('about.html', contact_form=contact_form)
 
 
 @homeRoutes.errorhandler(404)

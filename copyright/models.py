@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug import generate_password_hash, check_password_hash
+import datetime
  
 db = SQLAlchemy()
 
@@ -65,20 +66,27 @@ class User(db.Model):
     email = db.Column(db.String, unique=True) # TODO: maybe index=True ?
     pwdhash = db.Column(db.String)
     
-    # optional fields
-    profilePic_filename = db.Column(db.String)
+    # optional Stripe fields
     stripe_id = db.Column(db.String)
+    stripe_publishable_key = db.Column(db.String)
+    stripe_secret_key = db.Column(db.String)
+    
+    # other optional fields
+    profilePic_filename = db.Column(db.String)
+    plus_id = db.Column(db.String)
 
     # relationships
     created_images = db.relationship('Image', back_populates='creator')
     created_licenses = db.relationship('License', back_populates='creator')
 
     def __init__(self, firstname, lastname, email, password):
-        self.firstname = firstname
-        self.lastname = lastname
-        self.email = email.lower()
+        self.date_created = datetime.datetime.now()
+        self.active = True
+        self.firstname = firstname.strip()
+        self.lastname = lastname.strip()
+        self.email = email.strip().lower()
         self.pwdhash = generate_password_hash(password)
-        self.profilePic_filename = 'http://reels.syntheticpictures.com/img/directors/blank-avatar.png'
+        self.profilePic_filename = 'profilepic_placeholder.png'
 
     def check_password(self, password):
         return check_password_hash(self.pwdhash, password)
@@ -147,7 +155,7 @@ class Receipt(db.Model):
         # 1: Yes (anything)
         # 2: only minor edits
     price = db.Column(db.Integer)
-    stripe_email = db.Column(db.String)
+    stripe_email = db.Column(db.String) # email of purchaser, as entered through the Stripe Checkout popup
 
     # relationships
     image = db.relationship('Image', back_populates='receipts')
@@ -162,4 +170,11 @@ class Feedback(db.Model):
     
     # required fields
     id = db.Column(db.Integer, primary_key=True)
-    input = db.Column(db.String)
+    name = db.Column(db.String)
+    email = db.Column(db.String)
+    message = db.Column(db.String)
+
+    def __init__(self, name, email, message):
+        self.name = name.strip()
+        self.email = email.strip()
+        self.message = message.strip()

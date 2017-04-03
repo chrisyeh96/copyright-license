@@ -29,11 +29,20 @@ def create():
     if 'email' not in session:
         return redirect(url_for('homeRoutes.login'))
     
-    return render_template('create.html', token=None,
+    user = User.query.filter_by(email = session['email']).first()
+    return render_template('create.html', stripe_id=user.stripe_id,
         licensing_protocol=json.load(open('./copyright/static/survey/licensing-protocol.json', 'rb')))
 
 @createRoutes.route('/register', methods=['POST'])
 def register_license():
+    if 'email' not in session:
+        return redirect(url_for('homeRoutes.login'))
+
+    # user must have valid Stripe ID to register image
+    creator = User.query.filter_by(email = session['email']).first()
+    if creator.stripe_id is None:
+        return redirect(url_for('createRoutes.create'))
+
     imageFile = request.files['imageFile']
 
     success = True
@@ -59,12 +68,14 @@ def register_license():
     for key in request.form:
         print key
     sys.stdout.flush()
-    stripe_id = request.form['stripe_id']
     categories = request.form.getlist('categories') # list of strings, ie. ['3', '4']
     edit_privilege = request.form['edit_privilege']
-    credit = request.form['credit']
-    credit_type = request.form['credit_type']
-    credit_receiver = request.form['credit_receiver']
+    credit = bool(request.form['credit'])
+    if credit:
+        credit_type = request.form['credit_type']
+        print "wants credit"
+        sys.stdout.flush()
+        credit_receiver = request.form['credit_receiver']
     keywords = request.form['keywords']
     price_internal_1 = convertDollarsToCents(request.form['price11'])
     price_internal_2_50 = convertDollarsToCents(request.form['price21'])
@@ -72,11 +83,11 @@ def register_license():
     price_external_1 = convertDollarsToCents(request.form['price12'])
     price_external_2_50 = convertDollarsToCents(request.form['price22'])
     price_external_51 = convertDollarsToCents(request.form['price32'])
-    print 'test'
-    sys.stdout.flush()
 
     # process image
     filename_full = secure_filename(sha1_hash+getFileExt(imageFile.filename))
+    print "finished 'processing' img"
+    sys.stdout.flush()
     
     # create thumbnail
     # thumbnailImageAsString is of type StringIO
@@ -123,17 +134,6 @@ def register_license():
 
         now = datetime.datetime.now()
 
-        # check if user already exists
-        # TODO: once we implement a user login system, this needs to be
-        #   largely redone
-        creator = User.query.filter_by(stripe_id=stripe_id).first()
-        if not creator:
-            creator = User()
-            creator.stripe_id = stripe_id
-            creator.date_created = now
-            creator.active = True
-            db.session.add(creator)
-
         newImage = Image()
         newImage.sha1_hash = sha1_hash
         newImage.creator_id = creator.id
@@ -178,6 +178,9 @@ def register_license():
 
 @createRoutes.route('/oauth/callback')
 def callback():
+    if 'email' not in session:
+        return redirect(url_for('homeRoutes.login'))
+
     code = request.args.get('code')
     data = {'grant_type': 'authorization_code',
             'client_id': app.config['STRIPE_CLIENT_ID'],
@@ -191,9 +194,18 @@ def callback():
     # Grab access_token (use this as your user's API key)
     resp = resp.json()
     token = resp.get('access_token', None)
-    stripe_id = resp.get('stripe_user_id', "(Didn't get an ID from Stripe)")
-    access_key = resp.get('stripe_publishable_key', None)
-    return render_template('create.html', token=token, stripe_id=stripe_id, stripe_key=access_key,
+    if token is None:
+        error = resp.get('error_description')
+        return render_template('create.html', error=error)
+    else:
+        # save the returned Stripe ID of the user
+        user = User.query.filter_by(email = session['email']).first()
+        user.stripe_id = resp.get('stripe_user_id')
+        user.stripe_publishable_key = resp.get('stripe_publishable_key')
+        user.stripe_secret_key = token
+        db.session.commit()
+
+        return render_template('create.html', stripe_id=user.stripe_id,
         licensing_protocol=json.load(open('./copyright/static/survey/licensing-protocol.json', 'rb')))
 
 ## Helper Functions

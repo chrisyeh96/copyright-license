@@ -8,7 +8,7 @@
 <div class="container starter-template">
   <p class="lead">Create a License</p>
 
-  {% if not token %}
+  {% if not stripe_id %}
     <p>Please connect your Stripe account to proceed with creating a license.</p>
     <p><a href="https://connect.stripe.com/oauth/authorize?response_type=code&amp;client_id=ca_6MnivEyxNIcx1cNuyoGHc7u1dRcNevgW&amp;scope=read_write">
       <img src="/static/images/stripe.png">
@@ -97,9 +97,6 @@
           </div>
         {% endfor %}
       {% endfor %}
-
-      <!-- Stripe -->
-      <input type="hidden" value="{{ stripe_id }}" name="stripe_id">
 
       <p>By clicking on the submit button below, you agree to the <span id="toggleTerms" class="bold">mandatory terms of use</span>.</p>
 

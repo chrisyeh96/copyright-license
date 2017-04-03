@@ -1,0 +1,22 @@
+#profilePic {
+  width: 100px;
+  height: 100px;
+}
+
+.profile-wrapper {
+  margin-top: 2em;
+}
+
+.masonry-image>img {
+  max-width: 350px;
+  margin-bottom: 10px;
+}
+
+/* Hover interaction
+* set opacity
+* add a shadow
+*/
+.masonry-image>img:hover {
+  opacity: .75;
+  box-shadow: 0px 0px 30px #000;
+}

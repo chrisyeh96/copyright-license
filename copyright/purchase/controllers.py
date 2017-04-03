@@ -46,20 +46,15 @@ def charge():
         print "Error: mismatch between image and license"
         sys.stdout.flush()
 
-    image.num_purchases += 1
-
     stripe.api_key = app.config['STRIPE_SECRET_KEY']
-
-    customer = stripe.Customer.create(
-        email=request.form['stripeEmail'],
-        card=request.form['tokenId']
-    )
+    stripe_email = request.form['stripeEmail']
+    stripe_token = request.form['stripeToken']
 
     newReceipt = Receipt()
     newReceipt.license_id = license_id
     newReceipt.image_id = image_id
     newReceipt.transaction_date = datetime.datetime.now()
-    newReceipt.stripe_email = customer.email
+    newReceipt.stripe_email = stripe_email
 
     # calculate price
     total_price = license.price_internal_1 # TODO: change to dynamically reflect user choice
@@ -71,12 +66,15 @@ def charge():
         download = True
     else:
         try:
+            image.num_purchases += 1
             completed_charge = stripe.Charge.create(
-                customer=customer.id,
                 amount=total_price,
                 currency='usd',
+                source=stripe_token,
                 description='License Purchase',
-                destination=license.creator.stripe_id
+                destination={
+                    "account": license.creator.stripe_id
+                }
             )
             db.session.add(newReceipt)
             db.session.commit()

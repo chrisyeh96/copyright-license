@@ -1,0 +1,66 @@
+<!-- Reference: https://code.tutsplus.com/tutorials/intro-to-flask-signing-in-and-out--net-29982 -->
+
+{% extends "background_img_form.html" %}
+
+{% block css %}
+{{ super() }}
+{% endblock %}
+
+{% block form %}
+<div class="row">
+  <div class="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
+    <form action="{{ url_for('homeRoutes.signup') }}" method="POST">
+      {{ signup_form.hidden_tag() }}
+      
+      <h2>Sign Up</h2>
+
+      <div class="form-group {% if signup_form.firstname.errors %} has-error {% endif %}">
+        {{ signup_form.firstname.label() }}
+        {{ signup_form.firstname(placeholder="e.g. John", class="form-control", required="") }}
+
+        {% if signup_form.firstname.errors %}
+          <p class="help-block">
+            {{ signup_form.firstname.errors[0] }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group {% if signup_form.lastname.errors %} has-error {% endif %}">
+        {{ signup_form.lastname.label() }}
+        {{ signup_form.lastname(placeholder="e.g. Smith", class="form-control", required="") }}
+
+        {% if signup_form.lastname.errors %}
+          <p class="help-block">
+            {{ signup_form.lastname.errors[0] }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group {% if signup_form.email.errors %} has-error {% endif %}">
+        {{ signup_form.email.label() }}
+        {{ signup_form.email(placeholder="e.g. me@example.com", class="form-control", required="") }}
+
+        {% if signup_form.email.errors %}
+          <p class="help-block">
+            {{ signup_form.email.errors[0] }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group {% if signup_form.password.errors %} has-error {% endif %}">
+        {{ signup_form.password.label() }}
+        {{ signup_form.password(placeholder="Min. 8 Characters", class="form-control", required="") }}
+
+        {% if signup_form.password.errors %}
+          <p class="help-block">
+            {{ signup_form.password.errors[0] }}
+          </p>
+        {% endif %}
+      </div>
+
+      {{ signup_form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

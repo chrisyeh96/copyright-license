@@ -12,7 +12,7 @@
     <!-- Hidden Fields -->
     <input type="hidden" value="{{license.id}}" name="licenseId">
     <input type="hidden" value="{{image.id}}" name="imageId">
-    <input id="tokenId" type="hidden" value="" name="tokenId">
+    <input id="stripeToken" type="hidden" value="" name="stripeToken">
     <input id="stripeEmail" type="hidden" value="" name="stripeEmail">
 
     <!-- Pre-filled Fields -->
@@ -84,12 +84,15 @@
   
   <script src="https://checkout.stripe.com/checkout.js"></script>
   <button id="paymentButton" class="btn btn-default">Agree to Terms and Purchase</button>
+
+  <!--See docs here: https://stripe.com/docs/checkout#integration-custom -->
   <script>
     var handler = StripeCheckout.configure({
       key: '{{api_key}}',
+      locale: 'auto',
       token: function (token) {
-        $('#tokenId').attr('value', token.id);
-        $('#stripeEmail').attr('value', token.email);
+        $('#stripeToken').val(token.id);
+        $('#stripeEmail').val(token.email);
         $('#purchaseForm').submit();
       }
     });

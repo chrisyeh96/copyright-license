@@ -11,30 +11,24 @@ html, body {
   background-repeat: no-repeat; 
   background-attachment: fixed;
   
-  /* enable absolute positioning of searchForm */
+  /* enable absolute positioning of forms */
   position: relative;
 }
 
-#searchForm {
-  position: absolute;
+.form-wrapper {
+  position: relative;
   top: 20%;
-  left: 10%;
-  width: 400px;
-  max-width: 80%;
 }
 
-#searchForm .input-group {
-  background-color: white;
-  box-shadow: 0 0 3px 10px white;
-}
-
-#searchBox {
-  font: 18px "Segoe UI",Arial,Helvetica,sans-serif;
+form {
+  background-color: rgba(255,255,255,0.9);
+  box-shadow: 0 0 3px 10px rgba(255,255,255,0.9);
 }
 
 #attribution {
   background-color: white;
   position: absolute;
   bottom: 0;
+  left: 0;
   padding: 2px 5px;
 }
