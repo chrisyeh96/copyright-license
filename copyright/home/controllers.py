@@ -180,24 +180,30 @@ def submit_feedback():
         db.session.add(newFeedback)
         db.session.commit()
 
-        msg = MIMEMultipart()
-        fromaddr = "copyrightfeedback@gmail.com"
-        toaddr = "chrisyeh@stanford.edu"
-        msg['From'] = fromaddr
-        msg['To'] = toaddr
-        msg['Subject'] = "Copyright License Website Feedback"
-        body = "Name: %s\nEmail: %s\nMessage: %s" % (newFeedback.name, newFeedback.email, newFeedback.message)
-        msg.attach(MIMEText(body, 'plain'))
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(fromaddr, app.config['EMAIL_PASSWORD'])
-        text = msg.as_string()
-        server.sendmail(fromaddr, toaddr, text)
-        server.quit()
+        try:  
+            msg = MIMEMultipart()
+            fromaddr = "copyrightfeedback@gmail.com"
+            toaddr = "chrisyeh@stanford.edu"
+            msg['From'] = fromaddr
+            msg['To'] = toaddr
+            msg['Subject'] = "Copyright License Website Feedback"
+            body = "Name: %s\nEmail: %s\nMessage: %s" % (newFeedback.name, newFeedback.email, newFeedback.message)
+            msg.attach(MIMEText(body, 'plain'))
+            text = msg.as_string()
 
-        print "Submitted Feedback!"
-        print body
-        sys.stdout.flush()
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.ehlo()
+            server.login(fromaddr, app.config['EMAIL_PASSWORD'])
+            server.sendmail(fromaddr, toaddr, text)
+            server.quit()
+
+            print "Submitted Feedback!"
+            print body
+            sys.stdout.flush()
+
+        except:  
+            print 'Something went wrong with sending the feedback...'
+            print sys.exc_info()[0]
 
         return redirect(url_for('homeRoutes.about'))
     else:
